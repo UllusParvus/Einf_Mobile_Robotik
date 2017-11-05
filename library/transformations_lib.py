@@ -6,7 +6,7 @@ Created on Tue Oct 24 16:51:26 2017
 @author: christoph
 """
 
-import numpy as np
+import numpy as np, math
 
 
 def rot(theta):
@@ -44,3 +44,21 @@ def trans(t):
     trans = np.identity(tl_vec.shape[0])
     trans[:, trans.shape[1] - 1:] = tl_vec
     return trans
+
+
+def inverseKinematics(p, arm_lenghts, robo_height):
+    x = p[0][0]
+    y = p[1][0]
+    z = p[2][0] - robo_height
+
+    alpha = math.atan2(y, x-arm_lenghts[0]/2)
+
+    x -= arm_lenghts[0]/2
+    a = np.sqrt(x**2+z**2)
+    c = (a**2-arm_lenghts[1]**2-arm_lenghts[2]**2)/2*arm_lenghts[1]
+    b = np.sqrt(arm_lenghts[2]**2 - c**2)
+
+    theta1 = math.atan2(z, x) + math.atan2(b, arm_lenghts[1]+c)
+    theta2 = math.atan2(b, c)
+
+    return [np.rad2deg(alpha), np.rad2deg(theta1), np.rad2deg(theta2)]
