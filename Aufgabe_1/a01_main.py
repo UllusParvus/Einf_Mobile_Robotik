@@ -105,9 +105,7 @@ def a01_2():
     print('Punkt P im globalen KS O:')
     print(p_O)
 
-    print('###### b) ######')
-    t_OR = np.dot(trans((2, 1, 0.1)), rot2trans(rotz(np.deg2rad(30))))
-    t_RDB = trans((0.3 - 0, 0, 0.2))
+    t_RDB = trans((0.3, 0, 0.2))
     t_DBD = np.dot(np.dot(np.dot(trans((0, 0, 0)), rot2trans(rotz(np.deg2rad(40)))), trans((0, 0, 0))),
                    rot2trans(rotx(np.pi / 2)))
     t_DA1 = np.dot(np.dot(np.dot(trans((0, 0, 0)), rot2trans(rotz(np.deg2rad(30)))), trans((0.5, 0, 0))),
@@ -115,14 +113,12 @@ def a01_2():
     t_A1A2 = np.dot(np.dot(np.dot(trans((0, 0, 0)), rot2trans(rotz(-np.deg2rad(10)))), trans((0.5, 0, 0))),
                     rot2trans(rotx(0)))
 
-    p_O = np.dot(np.dot(np.dot(np.dot(np.dot(t_OR, t_RDB), t_DBD), t_DA1), t_A1A2), np.array([[0], [0], [0], [1]]))
-    t_RO = np.linalg.inv(t_OR)
-    p_R = np.dot(t_RO, p_O)
-    print('Punkt P im RS-KS R:')
+    p_R = np.dot(np.dot(np.dot(np.dot(t_RDB, t_DBD), t_DA1), t_A1A2), np.array([[0], [0], [0], [1]]))
     print(p_R)
 
-    angles = inverseKinematics(p_R, [0.6, 0.5, 0.5], 0.2)
+    angles = inverseKinematics(p_R, np.array([0.6, 0.5, 0.5]), 0.2)
     print(angles)
+
 
 def main():
     a01_1()

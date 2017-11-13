@@ -32,6 +32,11 @@ def rotz(theta):
                      [0, 0, 1]])
 
 
+def rot2d(theta):
+    return np.array([[np.cos(theta), -np.sin(theta)],
+                     [np.sin(theta), np.cos(theta)]])
+
+
 def rot2trans(r):
     trans = np.vstack((r, np.zeros(r.shape[1])))
     trans = np.hstack((trans, np.zeros((trans.shape[0], 1))))
@@ -46,19 +51,21 @@ def trans(t):
     return trans
 
 
-def inverseKinematics(p, arm_lenghts, robo_height):
-    x = p[0][0]
+def inverseKinematics(p, arm_lenghts, platform_height):
+    x = p[0][0] - arm_lenghts[0]/2
     y = p[1][0]
-    z = p[2][0] - robo_height
+    z = p[2][0] - platform_height
 
-    alpha = math.atan2(y, x-arm_lenghts[0]/2)
+    alpha = math.atan2(y, x)
 
-    x -= arm_lenghts[0]/2
-    a = np.sqrt(x**2+z**2)
-    c = (a**2-arm_lenghts[1]**2-arm_lenghts[2]**2)/2*arm_lenghts[1]
-    b = np.sqrt(arm_lenghts[2]**2 - c**2)
+    p_n = np.dot(rot2d(-alpha), [x, y])
+    x = p_n[0]
 
-    theta1 = math.atan2(z, x) + math.atan2(b, arm_lenghts[1]+c)
-    theta2 = math.atan2(b, c)
+    a = np.sqrt(np.power(x, 2) + np.power(z, 2))
+    c = (np.power(a, 2) - np.power(arm_lenghts[1], 2) - np.power(arm_lenghts[2], 2)) / (2*arm_lenghts[1])
+    b = np.sqrt(np.power(arm_lenghts[2], 2) - np.power(c, 2))
 
-    return [np.rad2deg(alpha), np.rad2deg(theta1), np.rad2deg(theta2)]
+    beta1 = math.atan2(z, x) + math.atan2(b, arm_lenghts[1]+c)
+    beta2 = -math.atan2(b, c)
+
+    return [np.rad2deg(alpha), np.rad2deg(beta1), np.rad2deg(beta2)]
