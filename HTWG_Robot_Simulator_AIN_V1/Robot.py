@@ -72,7 +72,7 @@ class Robot:
     #
     def curveDrive(self, v, r, delta_theta):
         omega = v / r
-        tau = delta_theta / omega
+        tau = abs(delta_theta) / omega
         n = int(tau/self.getTimeStep())
 
         return [[v, omega] for i in range(n)]
@@ -87,36 +87,41 @@ class Robot:
         return [[v, 0.0] for i in range(n)]
 
     def followLine(self, start_point, end_point):
-        l = np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2)
-        motions = self.straightDrive(1, l)
-        for motion in motions:
-            self.move(motion)
-            error_distance, omega, velocity, delta_theta = self.p_controller(start_point, end_point)
-            motions = self.curveDrive(velocity, error_distance, delta_theta)
+        #l = np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2)
+        #motions = self.straightDrive(1, l)
+        error = self.calculate_error(start_point, end_point)
+        while (self.calculate_error(start_point, end_point) != 0):
+            v, r, delta_theta = self.p_controller(self.calculate_error(start_point, end_point))
+            motions = self.curveDrive(v,r,delta_theta)
+            self.move(motions[0])
 
-    def p_controller(self, start_point, end_point):
+    def calculate_error(self, start_point, end_point):
         x, y, theta = self._world.getTrueRobotPose()
         current_position = np.array([x, y])
         # Regelabweichung e -> kuerzeste Distanz zwischen aktueller Position und Gerade, der gefolgt wird
-        error_distance = np.linalg.norm(np.cross(end_point - start_point, start_point - current_position)) / np.linalg.norm(end_point - start_point)
-        #print('Distanz -> ' + str(error_distance))
-        omega = self._K_p * error_distance
-        velocity = self._K_p * np.sqrt((current_position[0] - end_point[0]) ** 2 + (current_position[1] - end_point[1]) ** 2)
-        delta_theta = theta - atan2(end_point[1] - current_position[1], end_point[0] - current_position[0])
-        # links oder rechts von der Linie?
-        sign = (current_position[0] - start_point[0])*(end_point[1] - start_point[1]) - (current_position[1] - start_point[1])*(end_point[0] - start_point[0])
-        if sign < 0:
-            print('Links')
-        elif sign > 0:
-            print('Rechts')
-            omega *= -1
-            velocity *= -1
-            delta_theta *= -1
-        else:
-            print('Linie!')
-            omega = 0.0
+        error_distance = np.linalg.norm(
+        np.cross(end_point - start_point, start_point - current_position)) / np.linalg.norm(end_point - start_point)
+        sign = (current_position[0] - start_point[0]) * (end_point[1] - start_point[1]) - (current_position[1] -
+                                                                                           start_point[1]) * (
+                                                                                          end_point[0] - start_point[0])
+        if (sign < 0):
+            error_distance *= -1
 
-        return [error_distance, omega, velocity, delta_theta]
+        return error_distance
+
+    def p_controller(self, error_distance):
+        omega = self._K_p * error_distance
+        #velocity = self._K_p * np.sqrt((current_position[0] - end_point[0]) ** 2 + (current_position[1] - end_point[1]) ** 2)
+        #delta_theta = theta - atan2(end_point[1] - current_position[1], end_point[0] - current_position[0])
+        # links oder rechts von der Linie?
+        v = 0.5
+        r = abs(v / omega)
+        if error_distance < 0:
+            delta_theta = np.deg2rad(-10)
+        elif error_distance > 0:
+            delta_theta = np.deg2rad(10)
+
+        return v, r, delta_theta
 
     def pd_controller(self):
         pass

@@ -37,7 +37,7 @@ def a2_a():
     print(str(p2 - p1))
     myWorld = emptyWorld.buildWorld()
     myRobot = Robot.Robot()
-    myWorld.setRobot(myRobot, [p1[0], p1[1], pi / 4])
+    myWorld.setRobot(myRobot, [3, 4, pi / 4])
 
     polyline = [p1, p2]
     myWorld.drawPolyline(polyline)
@@ -46,9 +46,9 @@ def a2_a():
     myWorld.close()
 
 def main():
-    #a1_1()
+    a1_1()
     #a1_2()
-    a2_a()
+    #a2_a()
 
 if __name__ == '__main__':
     main()
