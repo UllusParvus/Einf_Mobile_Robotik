@@ -1,5 +1,5 @@
 from World import *
 
-def buildWorld():
-    world = World(80, 80)
+def buildWorld(x,y):
+    world = World(x, y)
     return world

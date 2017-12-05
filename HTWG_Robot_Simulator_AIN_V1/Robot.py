@@ -94,15 +94,24 @@ class Robot:
 
         return [[v, 0.0] for i in range(n)]
 
-    def followLine(self, start_point, end_point, controller_mode):
+    def followLine(self, start_point, end_point, controller_mode, v, tolerance=0.0):
         if controller_mode != 'p' and controller_mode != 'pd':
             raise RuntimeError('No valid controller mode!')
-        while True:
+
+        x, y, theta = self._world.getTrueRobotPose()
+        current_position = np.array([x,y])
+        distance_to_goal = np.sqrt((current_position[0]-end_point[0])**2 + (current_position[1]-end_point[1])**2)
+        while distance_to_goal > tolerance:
             self.calculate_error(start_point, end_point)
             if controller_mode == 'p':
-                self.move([0.5, self.p_controller()])
+                self.move([v, self.p_controller()])
             elif controller_mode == 'pd':
-                self.move([0.5, self.pd_controller()])
+                self.move([v, self.pd_controller()])
+            x, y, theta = self._world.getTrueRobotPose()
+            current_position = np.array([x, y])
+            distance_to_goal = np.sqrt((current_position[0] - end_point[0]) ** 2 + (current_position[1] - end_point[1]) ** 2)
+            print(distance_to_goal)
+        print('GOAL REACHED WITHIN TOLERANCE!')
 
     def calculate_error(self, start_point, end_point):
         self.error_distance[1] = self.error_distance[0]
@@ -125,8 +134,13 @@ class Robot:
         return self._K_d * d_e + self.p_controller()
 
     def gotoGlobal(self, v, p, tol):
-        pass
-
+        x, y, theta = self._world.getTrueRobotPose()
+        theta_to_goal = atan2(p[1]-y, p[0]-x)
+        delta_theta = theta - theta_to_goal
+        motions = self.curveDrive(0.05, 0.1, -delta_theta)
+        for motion in motions:
+            self.move(motion)
+        self.followLine(np.array([x, y]), p, 'pd', v, tol)
 
     # --------
     # move the robot for the next time step T by the
