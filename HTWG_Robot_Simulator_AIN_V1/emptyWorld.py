@@ -1,5 +1,5 @@
 from World import *
 
 def buildWorld():
-    world = World(20, 20)
+    world = World(80, 80)
     return world

@@ -32,8 +32,10 @@ class Robot:
         self._SigmaMotion = np.zeros((2,2))
 
         # Controller parameter
-        self._K_p = 1.5
-        self._K_d = None
+        self._K_p = 0.03
+        self._K_d = 0.05
+
+        self.error_distance = [0, 0]
 
         # Sensor parameter (x-axis is in forward direction):
         self._numberOfSensors = 28
@@ -71,8 +73,14 @@ class Robot:
     # returns a list of motion vectors for angular motion
     #
     def curveDrive(self, v, r, delta_theta):
-        omega = v / r
-        tau = abs(delta_theta) / omega
+        if delta_theta == 0:
+            return [[0, 0.0]]
+        elif delta_theta < 0:
+            omega = - v / r
+        elif delta_theta > 0:
+            omega = v / r
+
+        tau = abs(delta_theta / omega)
         n = int(tau/self.getTimeStep())
 
         return [[v, omega] for i in range(n)]
@@ -86,45 +94,39 @@ class Robot:
 
         return [[v, 0.0] for i in range(n)]
 
-    def followLine(self, start_point, end_point):
-        #l = np.sqrt((end_point[0] - start_point[0]) ** 2 + (end_point[1] - start_point[1]) ** 2)
-        #motions = self.straightDrive(1, l)
-        error = self.calculate_error(start_point, end_point)
-        while (self.calculate_error(start_point, end_point) != 0):
-            v, r, delta_theta = self.p_controller(self.calculate_error(start_point, end_point))
-            motions = self.curveDrive(v,r,delta_theta)
-            self.move(motions[0])
+    def followLine(self, start_point, end_point, controller_mode):
+        if controller_mode != 'p' and controller_mode != 'pd':
+            raise RuntimeError('No valid controller mode!')
+        while True:
+            self.calculate_error(start_point, end_point)
+            if controller_mode == 'p':
+                self.move([0.5, self.p_controller()])
+            elif controller_mode == 'pd':
+                self.move([0.5, self.pd_controller()])
 
     def calculate_error(self, start_point, end_point):
+        self.error_distance[1] = self.error_distance[0]
         x, y, theta = self._world.getTrueRobotPose()
         current_position = np.array([x, y])
+
         # Regelabweichung e -> kuerzeste Distanz zwischen aktueller Position und Gerade, der gefolgt wird
-        error_distance = np.linalg.norm(
-        np.cross(end_point - start_point, start_point - current_position)) / np.linalg.norm(end_point - start_point)
-        sign = (current_position[0] - start_point[0]) * (end_point[1] - start_point[1]) - (current_position[1] -
-                                                                                           start_point[1]) * (
-                                                                                          end_point[0] - start_point[0])
-        if (sign < 0):
-            error_distance *= -1
+        self.error_distance[0] = np.linalg.norm(np.cross(end_point - start_point, start_point - current_position)) / np.linalg.norm(end_point - start_point)
+        sign = (current_position[0] - start_point[0]) * (end_point[1] - start_point[1]) - \
+               (current_position[1] - start_point[1]) * (end_point[0] - start_point[0])
 
-        return error_distance
+        if sign < 0:
+            self.error_distance[0] *= -1
 
-    def p_controller(self, error_distance):
-        omega = self._K_p * error_distance
-        #velocity = self._K_p * np.sqrt((current_position[0] - end_point[0]) ** 2 + (current_position[1] - end_point[1]) ** 2)
-        #delta_theta = theta - atan2(end_point[1] - current_position[1], end_point[0] - current_position[0])
-        # links oder rechts von der Linie?
-        v = 0.5
-        r = abs(v / omega)
-        if error_distance < 0:
-            delta_theta = np.deg2rad(-10)
-        elif error_distance > 0:
-            delta_theta = np.deg2rad(10)
-
-        return v, r, delta_theta
+    def p_controller(self):
+        return self._K_p * self.error_distance[0]
 
     def pd_controller(self):
+        d_e = (self.error_distance[0] - self.error_distance[1])/self.getTimeStep()
+        return self._K_d * d_e + self.p_controller()
+
+    def gotoGlobal(self, v, p, tol):
         pass
+
 
     # --------
     # move the robot for the next time step T by the
