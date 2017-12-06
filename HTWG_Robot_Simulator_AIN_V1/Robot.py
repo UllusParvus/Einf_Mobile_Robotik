@@ -10,6 +10,8 @@
 from math import *
 import numpy as np
 import random
+from HTWG_Robot_Simulator_AIN_V1.OdometryPoseEstimator import *
+
 
 
 class Robot:
@@ -32,8 +34,8 @@ class Robot:
         self._SigmaMotion = np.zeros((2,2))
 
         # Controller parameter
-        self._K_p = 0.03
-        self._K_d = 0.05
+        self._K_p = 0.04
+        self._K_d = 1
 
         self.error_distance = [0, 0]
 
@@ -141,6 +143,18 @@ class Robot:
         for motion in motions:
             self.move(motion)
         self.followLine(np.array([x, y]), p, 'pd', v, tol)
+
+    def followPolyline(self, v, poly, tol=0.0):
+        for point in poly:
+            self.gotoGlobal(v, point, tol)
+
+    def gotoLocal(self, v, p, tol):
+        estimator = OdometryPoseEstimator()
+        print(estimator.getPose())
+        for x in range(100):
+            self.move([1, 0])
+            estimator.integrateMovement([1,0],0)
+        print(estimator.getPose())
 
     # --------
     # move the robot for the next time step T by the

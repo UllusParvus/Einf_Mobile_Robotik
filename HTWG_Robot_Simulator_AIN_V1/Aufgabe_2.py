@@ -42,7 +42,7 @@ def a2_a():
     myWorld.drawPolyline(polyline)
 
     # controller_mode = 'p' or 'pd'
-    myRobot.followLine(p1, p2, 'pd', 0.5, tolerance=0.4)
+    myRobot.followLine(p1, p2, 'pd', 1, tolerance=0.4)
     myWorld.close()
 
 
@@ -57,11 +57,31 @@ def a2_b():
 
     myWorld.close()
 
+def a2_c():
+    list_points = [[5,5], [10,5], [10,10]]
+    myWorld = emptyWorld.buildWorld(30,30)
+    for point in list_points:
+        myWorld.addBox(point[0],point[1])
+    myRobot = Robot.Robot()
+    myWorld.setRobot(myRobot, [1, 1, np.deg2rad(-110)])
+    myRobot.followPolyline(0.5, list_points, 0.5)
+
+def a3_a():
+    myWorld = emptyWorld.buildWorld(30,30)
+    myWorld.addBox(10,10)
+    myRobot = Robot.Robot()
+    myWorld.setRobot(myRobot, [1, 1, np.deg2rad(90)])
+    x = [10,10]
+    myRobot.gotoLocal(1, x, 0.5)
+
+
 def main():
     #a1_1()
     #a1_2()
-    a2_a()
+    #a2_a()
     #a2_b()
+    #a2_c()
+    a3_a()
 
 if __name__ == '__main__':
     main()
