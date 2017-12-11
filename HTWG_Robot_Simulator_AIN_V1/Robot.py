@@ -220,6 +220,7 @@ class Robot:
             dists = self.sense()
             directions = self.getSensorDirections()
             lines = SensorUtilities.extractLinesFromSensorData(dists, directions)
+            lines = SensorUtilities.transform(lines, estimator.getPose())
             x, y, theta = estimator.getPose()
             p1 = Point(lines[0][0][0], lines[0][0][1])
             p2 = Point(lines[0][1][0], lines[0][1][1])
