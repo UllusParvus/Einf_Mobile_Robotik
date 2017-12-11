@@ -11,7 +11,10 @@ from math import *
 import numpy as np
 import random
 from HTWG_Robot_Simulator_AIN_V1.OdometryPoseEstimator import *
-
+from library.transformations_lib import *
+from HTWG_Robot_Simulator_AIN_V1 import SensorUtilities
+from HTWG_Robot_Simulator_AIN_V1.graphics import *
+from HTWG_Robot_Simulator_AIN_V1 import World
 
 
 class Robot:
@@ -115,9 +118,46 @@ class Robot:
             print(distance_to_goal)
         print('GOAL REACHED WITHIN TOLERANCE!')
 
+    def followLineLocal(self, estimator, start_point, end_point, controller_mode, v, tolerance=0.0):
+        if controller_mode != 'p' and controller_mode != 'pd':
+            raise RuntimeError('No valid controller mode!')
+
+        x, y, theta = estimator.getPose()
+        current_position = np.array([x,y])
+        distance_to_goal = np.sqrt((current_position[0]-end_point[0])**2 + (current_position[1]-end_point[1])**2)
+        while distance_to_goal > tolerance:
+            self.calculate_error_local(estimator, start_point, end_point)
+            if controller_mode == 'p':
+                movement = [v, self.p_controller()]
+                self.move(movement)
+                estimator.integrateMovement(movement,0)
+            elif controller_mode == 'pd':
+                movement = [v, self.pd_controller()]
+                self.move(movement)
+                estimator.integrateMovement(movement,0)
+
+            x, y, theta = estimator.getPose()
+            current_position = np.array([x, y])
+            distance_to_goal = np.sqrt((current_position[0] - end_point[0]) ** 2 + (current_position[1] - end_point[1]) ** 2)
+            print(distance_to_goal)
+        print('GOAL REACHED WITHIN TOLERANCE!')
+
     def calculate_error(self, start_point, end_point):
         self.error_distance[1] = self.error_distance[0]
         x, y, theta = self._world.getTrueRobotPose()
+        current_position = np.array([x, y])
+
+        # Regelabweichung e -> kuerzeste Distanz zwischen aktueller Position und Gerade, der gefolgt wird
+        self.error_distance[0] = np.linalg.norm(np.cross(end_point - start_point, start_point - current_position)) / np.linalg.norm(end_point - start_point)
+        sign = (current_position[0] - start_point[0]) * (end_point[1] - start_point[1]) - \
+               (current_position[1] - start_point[1]) * (end_point[0] - start_point[0])
+
+        if sign < 0:
+            self.error_distance[0] *= -1
+
+    def calculate_error_local(self, estimator, start_point, end_point):
+        self.error_distance[1] = self.error_distance[0]
+        x, y, theta = estimator.getPose()
         current_position = np.array([x, y])
 
         # Regelabweichung e -> kuerzeste Distanz zwischen aktueller Position und Gerade, der gefolgt wird
@@ -149,14 +189,64 @@ class Robot:
             self.gotoGlobal(v, point, tol)
 
     def gotoLocal(self, v, p, tol):
+        """
+        Moves robot towards a point in the local coordinate system.
+        :param v: speed
+        :param p: point in local CS
+        :param tol: tolerance
+        """
         estimator = OdometryPoseEstimator()
-        print(estimator.getPose())
-        for x in range(100):
-            self.move([1, 0])
-            estimator.integrateMovement([1,0],0)
-        print(estimator.getPose())
+        estimator.setInitialPose((1,1,pi/2))
+        # Transform p to global coordinate system
+        x = np.append(p, [[0], [1]])
+        t_OR = np.dot(trans((1, 1, 0)), rot2trans(rotz(np.deg2rad(90))))
+        x_in_global = np.dot(t_OR, x)
+        x_in_global = np.array([[x_in_global[0]], [x_in_global[1]]])
+        x, y, theta = estimator.getPose()
+        theta_to_goal = atan2(p[1], p[0])
+        motions = self.curveDrive(0.2, 3, theta_to_goal)
+        for motion in motions:
+            self.move(motion)
+            estimator.integrateMovement(motion, 0)
+        x, y, theta = estimator.getPose()
+        self.followLineLocal(estimator, np.array([x, y]), x_in_global, 'pd', v, tol)
 
-    # --------
+
+    def followWalls(self, v, currentPose):
+        estimator = OdometryPoseEstimator()
+        estimator.setInitialPose(currentPose)
+
+        while True:
+            dists = self.sense()
+            directions = self.getSensorDirections()
+            lines = SensorUtilities.extractLinesFromSensorData(dists, directions)
+            x, y, theta = estimator.getPose()
+            p1 = Point(lines[0][0][0], lines[0][0][1])
+            p2 = Point(lines[0][1][0], lines[0][1][1])
+            line = Line(p1, p2)
+            min_distance = World.World.distPointSegment(Point(x,y), line)
+            selected_line = line
+            for l in lines:
+                line = Line(Point(l[0][0], l[0][1]), Point(l[1][0], l[1][1]))
+                distance = World.World.distPointSegment(Point(x, y), line)
+                if min_distance > distance:
+                    min_distance = distance
+                    selected_line = line
+
+                p1_x = selected_line.getP1().getX()
+                p1_y = selected_line.getP1().getY()
+                p2_x = selected_line.getP2().getX()
+                p2_y = selected_line.getP2().getY()
+                theta = atan2(p2_y - p1_y, p2_x - p1_x)
+                print("fick dich")
+
+
+
+
+
+
+
+                # --------
     # move the robot for the next time step T by the
     # command motion = [v,omega].
     # Returns False if robot is stalled.

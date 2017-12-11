@@ -3,6 +3,8 @@ import numpy as np
 import emptyWorld
 import Robot
 from HTWG_Robot_Simulator_AIN_V1 import Kinematics as Kin
+from library.transformations_lib import *
+from HTWG_Robot_Simulator_AIN_V1 import testWorld
 
 def a1_1():
     myWorld = emptyWorld.buildWorld()
@@ -68,11 +70,23 @@ def a2_c():
 
 def a3_a():
     myWorld = emptyWorld.buildWorld(30,30)
-    myWorld.addBox(10,10)
+    point = np.array([[10], [-10]])
+    x = np.append(point, [[0], [1]])
+    t_OR = np.dot(trans((1,1,0)), rot2trans(rotz(np.deg2rad(90))))
+    x_in_global = np.dot(t_OR, x)
+    myWorld.addBox(x_in_global[0], x_in_global[1])
     myRobot = Robot.Robot()
     myWorld.setRobot(myRobot, [1, 1, np.deg2rad(90)])
-    x = [10,10]
-    myRobot.gotoLocal(1, x, 0.5)
+
+    myRobot.gotoLocal(1, point, 0.5)
+
+
+def a3_b():
+    myWorld = testWorld.buildWorld()
+    myRobot = Robot.Robot()
+    myWorld.setRobot(myRobot, [2,4.5, np.deg2rad(0)])
+
+    myRobot.followWalls(0.1, myWorld.getTrueRobotPose())
 
 
 def main():
@@ -81,7 +95,8 @@ def main():
     #a2_a()
     #a2_b()
     #a2_c()
-    a3_a()
+    #a3_a()
+    a3_b()
 
 if __name__ == '__main__':
     main()
