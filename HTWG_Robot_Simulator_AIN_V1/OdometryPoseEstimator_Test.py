@@ -11,7 +11,7 @@ import OdometryPoseEstimator
 n = 141
 
 # Set a robot in a world
-myWorld = emptyWorld.buildWorld()
+myWorld = emptyWorld.buildWorld(50,50)
 myRobot = Robot.Robot()
 poseStart = [2,5,pi/2]
 myWorld.setRobot(myRobot, poseStart)

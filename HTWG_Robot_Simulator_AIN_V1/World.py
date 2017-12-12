@@ -61,7 +61,7 @@ class World:
         self._boxes = []
         self._boxSensor = False
         self._boxSensorAngle = 140 * (pi/180) # 140 degree
-        self._boxRadius = 0.1 # box radius
+        self._boxRadius = 0.03 # box radius
         self._boxesSensedDist = [] # Distance to the sensed boxes
         self._boxesSensedAngles = [] # Angles of the sensed boxes
 
@@ -100,7 +100,7 @@ class World:
         self._distanceGrid = None
 
         # Path history
-        self._showPathHistory = True
+        self._showPathHistory = False
         self._drivenDistance = 0.0
 
         # Drawn (several!) polylines:

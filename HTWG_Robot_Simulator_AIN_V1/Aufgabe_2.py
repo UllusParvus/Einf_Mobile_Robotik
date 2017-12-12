@@ -1,6 +1,6 @@
 from math import *
 import numpy as np
-import emptyWorld
+import emptyWorld, officeWorld
 import Robot
 from HTWG_Robot_Simulator_AIN_V1 import Kinematics as Kin
 from library.transformations_lib import *
@@ -72,14 +72,15 @@ def a3_a():
     myWorld = emptyWorld.buildWorld(30,30)
     point = np.array([[10], [-10]])
     x = np.append(point, [[0], [1]])
+    print(x)
     t_OR = np.dot(trans((1,1,0)), rot2trans(rotz(np.deg2rad(90))))
     x_in_global = np.dot(t_OR, x)
+    print(x_in_global)
     myWorld.addBox(x_in_global[0], x_in_global[1])
     myRobot = Robot.Robot()
     myWorld.setRobot(myRobot, [1, 1, np.deg2rad(90)])
 
-    myRobot.gotoLocal(1, point, 0.5)
-
+    myRobot.gotoLocal(0.5, point, 0.1)
 
 def a3_b():
     myWorld = testWorld.buildWorld()

@@ -40,6 +40,11 @@ class Robot:
         self._K_p = 0.04
         self._K_d = 1
 
+        # Controller parameter for exerice 3
+        self._K_p_1 = 0.08
+        self._K_p_2 = 0.04
+        self._K_p_3 = 0.02
+
         self.error_distance = [0, 0]
 
         # Sensor parameter (x-axis is in forward direction):
@@ -204,7 +209,7 @@ class Robot:
         x_in_global = np.array([[x_in_global[0]], [x_in_global[1]]])
         x, y, theta = estimator.getPose()
         theta_to_goal = atan2(p[1], p[0])
-        motions = self.curveDrive(0.2, 3, theta_to_goal)
+        motions = self.curveDrive(0.2, 0.1, theta_to_goal)
         for motion in motions:
             self.move(motion)
             estimator.integrateMovement(motion, 0)
@@ -212,42 +217,46 @@ class Robot:
         self.followLineLocal(estimator, np.array([x, y]), x_in_global, 'pd', v, tol)
 
 
-    def followWalls(self, v, currentPose):
-        estimator = OdometryPoseEstimator()
-        estimator.setInitialPose(currentPose)
-
+    def followWalls(self, v_start, currentPose):
+        desired_distance_to_wall = self.getSize()/2 + 0.4
         while True:
             dists = self.sense()
             directions = self.getSensorDirections()
-            lines = SensorUtilities.extractLinesFromSensorData(dists, directions)
-            lines = SensorUtilities.transform(lines, estimator.getPose())
-            x, y, theta = estimator.getPose()
-            p1 = Point(lines[0][0][0], lines[0][0][1])
-            p2 = Point(lines[0][1][0], lines[0][1][1])
-            line = Line(p1, p2)
-            min_distance = World.World.distPointSegment(Point(x,y), line)
-            selected_line = line
-            for l in lines:
-                line = Line(Point(l[0][0], l[0][1]), Point(l[1][0], l[1][1]))
-                distance = World.World.distPointSegment(Point(x, y), line)
-                if min_distance > distance:
-                    min_distance = distance
-                    selected_line = line
+            min_dist = min(x for x in dists if x is not None)
+            min_index = dists.index(min_dist)
+            min_dist_angle = directions[min_index]
+            lines_l = SensorUtilities.extractLinesFromSensorData(dists, directions)
+            lines_g = SensorUtilities.transform(lines_l, self._world.getTrueRobotPose())
+            self._world.drawPolylines(lines_g)
 
-                p1_x = selected_line.getP1().getX()
-                p1_y = selected_line.getP1().getY()
-                p2_x = selected_line.getP2().getX()
-                p2_y = selected_line.getP2().getY()
-                theta = atan2(p2_y - p1_y, p2_x - p1_x)
-                print("fick dich")
+            omega_distance_to_wall = self._K_p_1 * (min_dist - desired_distance_to_wall)
+
+            if min_dist_angle > 0:
+                diff_orientation_to_wall = min_dist_angle - pi / 2
+            elif min_dist_angle < 0:
+                diff_orientation_to_wall = min_dist_angle + pi / 2
+            else:
+                diff_orientation_to_wall = 0.0
+
+            omega_orientation_to_wall = self._K_p_2 * diff_orientation_to_wall
+            omega = omega_distance_to_wall + omega_orientation_to_wall
+
+            if dists[len(dists)//2] is not None and dists[len(dists)//2 - 1] is not None:
+                frontal_distance = dists[len(dists) // 2] + dists[len(dists) // 2 - 1] / 2
+                v = frontal_distance * self._K_p_3
+                if frontal_distance < 2 * min_dist:
+                    sum_left = sum(dists[:14])
+                    sum_right = sum(dists[14:])
+
+            else:
+                v = v_start
 
 
 
+            self.move([v, omega])
 
 
-
-
-                # --------
+    # --------
     # move the robot for the next time step T by the
     # command motion = [v,omega].
     # Returns False if robot is stalled.
