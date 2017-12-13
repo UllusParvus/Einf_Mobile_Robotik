@@ -85,7 +85,7 @@ def a3_a():
 def a3_b():
     myWorld = testWorld.buildWorld()
     myRobot = Robot.Robot()
-    myWorld.setRobot(myRobot, [2,4.5, np.deg2rad(0)])
+    myWorld.setRobot(myRobot, [13.5,3, np.deg2rad(90)])
 
     myRobot.followWalls(0.1, myWorld.getTrueRobotPose())
 

@@ -41,9 +41,10 @@ class Robot:
         self._K_d = 1
 
         # Controller parameter for exerice 3
-        self._K_p_1 = 0.08
-        self._K_p_2 = 0.04
-        self._K_p_3 = 0.02
+        self._K_p_for_angular_vel_dist_to_wall = 0.08
+        self._K_p_for_angular_to_wall = 0.8
+        self._K_p_for_linear_vel = 0.02
+        self._K_d_for_angular_vel_dist_to_wall = 1
 
         self.error_distance = [0, 0]
 
@@ -218,7 +219,7 @@ class Robot:
 
 
     def followWalls(self, v_start, currentPose):
-        desired_distance_to_wall = self.getSize()/2 + 0.4
+        desired_distance_to_wall = self.getSize()/2 + 0.1
         while True:
             dists = self.sense()
             directions = self.getSensorDirections()
@@ -229,29 +230,33 @@ class Robot:
             lines_g = SensorUtilities.transform(lines_l, self._world.getTrueRobotPose())
             self._world.drawPolylines(lines_g)
 
-            omega_distance_to_wall = self._K_p_1 * (min_dist - desired_distance_to_wall)
-
+            self.error_distance[0] = min_dist - desired_distance_to_wall
+            d_e = (self.error_distance[0] - self.error_distance[1]) / self.getTimeStep()
             if min_dist_angle > 0:
                 diff_orientation_to_wall = min_dist_angle - pi / 2
             elif min_dist_angle < 0:
                 diff_orientation_to_wall = min_dist_angle + pi / 2
+                #self.error_distance[0] *= -1
             else:
                 diff_orientation_to_wall = 0.0
 
-            omega_orientation_to_wall = self._K_p_2 * diff_orientation_to_wall
+            omega_distance_to_wall = - self._K_p_for_angular_vel_dist_to_wall * self.error_distance[
+                0] - self._K_d_for_angular_vel_dist_to_wall * d_e
+            self.error_distance[1] = self.error_distance[0]
+
+            omega_orientation_to_wall = self._K_p_for_angular_to_wall * diff_orientation_to_wall
             omega = omega_distance_to_wall + omega_orientation_to_wall
 
             if dists[len(dists)//2] is not None and dists[len(dists)//2 - 1] is not None:
                 frontal_distance = dists[len(dists) // 2] + dists[len(dists) // 2 - 1] / 2
-                v = frontal_distance * self._K_p_3
+                v = frontal_distance * self._K_p_for_linear_vel
                 if frontal_distance < 2 * min_dist:
-                    sum_left = sum(dists[:14])
-                    sum_right = sum(dists[14:])
+                    pass
+                    #sum_left = sum(dists[:14])
+                    #sum_right = sum(dists[14:])
 
             else:
                 v = v_start
-
-
 
             self.move([v, omega])
 

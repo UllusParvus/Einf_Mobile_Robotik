@@ -258,7 +258,7 @@ class World:
         nc = Point(x+dx,y+dy)
 
         if self.getNearestDistance(nc) < r: # movement is not possible because of obstacles
-            print("Robot stalled: ", x, y, theta)
+            #print("Robot stalled: ", x, y, theta)
             # raw_input("Enter: ")
             return False
 
