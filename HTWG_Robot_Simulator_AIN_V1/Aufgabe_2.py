@@ -1,6 +1,6 @@
 from math import *
 import numpy as np
-import emptyWorld, officeWorld
+import emptyWorld, officeWorld, obstacleWorld, obstacleWorld1, obstacleWorld2, obstacleWorld3
 import Robot
 from HTWG_Robot_Simulator_AIN_V1 import Kinematics as Kin
 from library.transformations_lib import *
@@ -85,9 +85,10 @@ def a3_a():
 def a3_b():
     myWorld = testWorld.buildWorld()
     myRobot = Robot.Robot()
-    myWorld.setRobot(myRobot, [13.5,3, np.deg2rad(90)])
+    myWorld.setRobot(myRobot, [8, 4.5, np.deg2rad(0)])
 
-    myRobot.followWalls(0.1, myWorld.getTrueRobotPose())
+    myRobot.followWalls_new(0.3)
+    #myRobot.followWalls(0.5, myWorld.getTrueRobotPose())
 
 
 def main():
