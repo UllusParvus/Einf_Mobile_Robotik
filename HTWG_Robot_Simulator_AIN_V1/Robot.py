@@ -41,10 +41,10 @@ class Robot:
         self._K_d = 1
 
         # Controller parameter for exercise 3
-        self._K_p_for_angular_vel_dist_to_wall = 0.04
-        self._K_p_for_angle_to_wall = 0.4
+        self._K_p_for_angular_vel_dist_to_wall = 0.1
+        self._K_p_for_angle_to_wall = 1
         self._K_p_for_linear_vel = 0.02
-        self._K_d_for_angular_vel_dist_to_wall = 1
+        self._K_d_for_angular_vel_dist_to_wall = 1.3
 
         self.error_distance = [0, 0]
 
@@ -260,9 +260,20 @@ class Robot:
 
             self.move([v, omega])
 
-    def followWalls_new(self, desired_dist_to_wall):
-        desired_dist_to_wall = desired_dist_to_wall + self.getSize()/2
-        v_max = 0.4
+    def followWalls_new(self, v_max=0.5, dist_to_wall=0.3, direction='left'):
+        desired_dist_to_wall = dist_to_wall + self.getSize()/2
+
+        # at first scan for nearest wall to determine the follow direction
+        dists = self.sense()
+        directions = self.getSensorDirections()
+        min_dist = min(x for x in dists if x is not None)
+        min_index = dists.index(min_dist)
+        min_dist_angle = directions[min_index]
+        if min_dist_angle < 0:
+            follow_direction = -1
+        elif min_dist_angle > 0:
+            follow_direction = 1
+
         while True:
             # get distances and angles from laser sensor
             dists = self.sense()
@@ -288,63 +299,35 @@ class Robot:
             self.error_distance[0] = min_dist - desired_dist_to_wall
 
             # approximate the derivation of this error
-            d_e = (self.error_distance[0] - self.error_distance[1]) / self.getTimeStep()
-
-            # determine wether the robot sees a wall to its left or to its right, then set the "follow direction" accordingly
-            # 1 => robot follows wall to its right, -1 => robot follows wall to its left
-            if min_dist_angle > 0:
-                follow_direction = 1
-                orientation_to_wall = min_dist_angle - pi/2
-            elif min_dist_angle < 0:
-                follow_direction = -1
-                orientation_to_wall = min_dist_angle + pi/2
-
-            # control the linear velocity in dependence to a possible wall in front of the robot
-            if front_dist < desired_dist_to_wall * 1.5:
-                # check if turn right or turn left
-                sum_laser_values_left = 0.0
-                sum_laser_values_right = 0.0
-                for val in dists[0:len(dists) // 2]:
-                    if val is not None:
-                        sum_laser_values_right += val
-                    else:
-                        sum_laser_values_right += 100
-
-                for val in dists[len(dists) // 2:len(dists)-1]:
-                    if val is not None:
-                        sum_laser_values_left += val
-                    else:
-                        sum_laser_values_left += 100
-
-                if sum_laser_values_left > sum_laser_values_right:
-                    motions = self.curveDrive(0.05, 0.1, pi/2)
-                    for motion in motions:
-                        self.move(motion)
-                elif sum_laser_values_right > sum_laser_values_left:
-                    motions = self.curveDrive(0.05, 0.1, -pi / 2)
-                    for motion in motions:
-                        self.move(motion)
-
-            elif front_dist < desired_dist_to_wall * 2.5:
-                v = 0.2 * v_max
-            elif front_dist < desired_dist_to_wall * 2:
-                v = 0.15 * v_max
-            elif fabs(min_dist_angle) > 1.75:
-                v = 0.03 * v_max
-
-            else:
-                v = v_max
+            d_e = (self.error_distance[0] - self.error_distance[1])
 
             # calculate angular velocity with PD-controller constants and according errors
-            omega_A = follow_direction * (self._K_p_for_angular_vel_dist_to_wall * self.error_distance[0] + self._K_d_for_angular_vel_dist_to_wall * d_e)
-            omega_B = self._K_p_for_angle_to_wall * orientation_to_wall
+            omega_A = follow_direction * (self._K_p_for_angular_vel_dist_to_wall * self.error_distance[
+                0] + self._K_d_for_angular_vel_dist_to_wall * d_e)
+            omega_B = self._K_p_for_angle_to_wall * (min_dist_angle - pi * follow_direction / 2)
             omega = omega_A + omega_B
+
+            # control the linear velocity in dependence to a possible wall in front of the robot
+            if front_dist < desired_dist_to_wall * 2:
+                v = 0.0
+                if follow_direction == 1:
+                    omega = fabs(omega)*-1
+                elif follow_direction == -1:
+                    omega = fabs(omega)
+
+            #elif front_dist < desired_dist_to_wall * 3:
+            #    v = 0.2 * v_max
+            elif front_dist < desired_dist_to_wall * 2.5:
+                v = 0.2 * v_max
+            elif fabs(min_dist_angle) > 1.75:
+                v = 0.03 * v_max
+            else:
+                v = v_max
 
             # set the current error as previous error
             self.error_distance[1] = self.error_distance[0]
 
             self.move([v, omega])
-
 
     # --------
     # move the robot for the next time step T by the
