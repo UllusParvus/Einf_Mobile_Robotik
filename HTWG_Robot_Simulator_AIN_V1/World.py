@@ -100,7 +100,7 @@ class World:
         self._distanceGrid = None
 
         # Path history
-        self._showPathHistory = False
+        self._showPathHistory = True
         self._drivenDistance = 0.0
 
         # Drawn (several!) polylines:

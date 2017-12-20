@@ -7,11 +7,12 @@ from library.transformations_lib import *
 from HTWG_Robot_Simulator_AIN_V1 import testWorld
 
 def a1_1():
-    myWorld = emptyWorld.buildWorld()
+    myWorld = emptyWorld.buildWorld(20, 20)
     myRobot = Robot.Robot()
     myWorld.setRobot(myRobot, [10, 10, pi / 2])
 
-    motions = myRobot.curveDrive(0.5, 4, np.deg2rad(0));
+    motions = myRobot.curveDrive(0.5, 4, np.deg2rad(90));
+    print(motions)
 
     for motion in motions:
         myRobot.move(motion)
@@ -85,9 +86,9 @@ def a3_a():
 def a3_b():
     myWorld = testWorld.buildWorld()
     myRobot = Robot.Robot()
-    myWorld.setRobot(myRobot, [9, 15, np.deg2rad(-45)])
+    myWorld.setRobot(myRobot, [9, 12, np.deg2rad(45)])
 
-    myRobot.followWalls_new(v_max=0.4, dist_to_wall=0.4)
+    myRobot.followWalls_new(v_max=0.5, dist_to_wall=0.4)
 
 
 def main():
