@@ -3,7 +3,7 @@ import emptyWorld
 import Robot
 
 # Roboter in einer Welt positionieren:
-myWorld = emptyWorld.buildWorld()
+myWorld = emptyWorld.buildWorld(30,30)
 myRobot = Robot.Robot()
 myWorld.setRobot(myRobot, [2, 5.5, pi / 2])
 
@@ -24,6 +24,7 @@ for t in range(n):
     motion = motionCircle[t]
     print("v = ", motion[0], "omega = ", motion[1]*180/pi)
     myRobot.move(motion)
+    sigma_motion = myRobot.getSigmaMotion()
 
     # Gib Daten vom Distanzsensor aus:
     distanceSensorData = myRobot.sense()
