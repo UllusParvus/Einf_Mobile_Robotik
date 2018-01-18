@@ -13,8 +13,8 @@ def main():
     #print("distance grid generated")
     #dist_grid.drawGrid()
 
-    fromPose = [robotStartPose[0]-2, robotStartPose[1]-2, robotStartPose[2]]
-    toPose = [robotStartPose[0]+2, robotStartPose[1]+2, robotStartPose[2]]
+    fromPose = [robotStartPose[0]-2, robotStartPose[1]-2, robotStartPose[2] - m.pi/4]
+    toPose = [robotStartPose[0]+2, robotStartPose[1]+2, robotStartPose[2] + m.pi/4]
     estimator = ParticleFilterPoseEstimator()
     estimator.setRobot(myRobot)
     estimator.initialize(fromPose, toPose, n=200)
