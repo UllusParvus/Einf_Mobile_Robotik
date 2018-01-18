@@ -13,8 +13,8 @@ def main():
     #print("distance grid generated")
     #dist_grid.drawGrid()
 
-    fromPose = [robotStartPose[0]-2, robotStartPose[1]-2, robotStartPose[2]+m.pi/4]
-    toPose = [robotStartPose[0]+2, robotStartPose[1]+2, robotStartPose[2]-m.pi/4]
+    fromPose = [robotStartPose[0]-2, robotStartPose[1]-2, robotStartPose[2]]
+    toPose = [robotStartPose[0]+2, robotStartPose[1]+2, robotStartPose[2]]
     estimator = ParticleFilterPoseEstimator()
     estimator.setRobot(myRobot)
     estimator.initialize(fromPose, toPose, n=200)
@@ -22,14 +22,25 @@ def main():
     #plotPoseParticles(estimator._particles)
     #plotShow()
 
-    motions = myRobot.curveDrive(1.0, 3, -m.pi);
+    motions = myRobot.curveDrive(1.0, 3, -m.pi)
+    counter = 1
 
     for motion in motions:
-        plotPoseParticles(estimator._particles)
-        plotShow()
         myRobot.move(motion)
         estimator.integrateMovement(motion)
-        estimator.integrateMeasurement(myRobot.sense(), myRobot.getSensorDirections(), dist_grid)
+
+        if counter % 5 is 0:
+            if counter % 15 is 0:
+                print("scheiße")
+            plotPoseParticles(estimator._particles)
+            plotShow()
+            estimator.integrateMeasurement(myRobot.sense(), myRobot.getSensorDirections(), dist_grid)
+            plotPoseParticles(estimator._particles)
+            plotShow()
+        # Only every 5 times
+
+        counter += 1
+
 
 
 
