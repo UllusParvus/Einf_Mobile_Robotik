@@ -29,9 +29,7 @@ def main():
         myRobot.move(motion)
         estimator.integrateMovement(motion)
 
-        if counter % 5 is 0:
-            if counter % 15 is 0:
-                print("scheiße")
+        if counter % 5 == 0:
             plotPoseParticles(estimator._particles)
             plotShow()
             estimator.integrateMeasurement(myRobot.sense(), myRobot.getSensorDirections(), dist_grid)
