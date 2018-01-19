@@ -10,17 +10,12 @@ def main():
     myWorld.setRobot(myRobot, robotStartPose)
 
     dist_grid = myWorld.getDistanceGrid()
-    #print("distance grid generated")
-    #dist_grid.drawGrid()
 
     fromPose = [robotStartPose[0]-1, robotStartPose[1]-1, robotStartPose[2] - m.pi/8]
     toPose = [robotStartPose[0]+1, robotStartPose[1]+1, robotStartPose[2] + m.pi/8]
     estimator = ParticleFilterPoseEstimator()
     estimator.setRobot(myRobot)
     estimator.initialize(fromPose, toPose, n=200)
-
-    #plotPoseParticles(estimator._particles)
-    #plotShow()
 
     motions = myRobot.curveDrive(1.0, 3, -m.pi)
     counter = 1
@@ -30,26 +25,25 @@ def main():
         estimator.integrateMovement(motion)
 
         if counter % 5 == 0:
-            plotPoseParticles(estimator._particles)
-            plotShow()
+            #plotPoseParticles(estimator._particles)
+            #plotShow()
             estimator.integrateMeasurement(myRobot.sense(), myRobot.getSensorDirections(), dist_grid)
-
-            mean = estimator.getPose()
-            print("mean x: ", mean[0])
-            print("mean y: ", mean[1])
-            print("mean theta: ", np.rad2deg(mean[2]))
-            cov = estimator.getCovariance()
-            #print("cov x: ", cov[0])
-            print(cov)
-            plotPoseParticles(estimator._particles)
-            plotShow()
+            #plotPoseParticles(estimator._particles)
+            #plotShow()
 
         # Only every 5 times
 
         counter += 1
+    real_pose = myRobot._world.getTrueRobotPose()
+    estimated_pose = estimator.getPose()
+    print('Echte Roboter-Position und -Ausrichung -> ', real_pose[0], real_pose[1], np.rad2deg(real_pose[2]))
+    print('Vom Partikel-Filter geschätzte Position und Ausrichtung -> ', estimated_pose[0], estimated_pose[1], np.rad2deg(2*pi + estimated_pose[2]))
+    print('')
+    print('Kovarianz-Matrix')
+    print(estimator.getCovariance())
 
-
-
+    plotPoseParticles(estimator._particles)
+    plotShow()
 
     myWorld.close()
 

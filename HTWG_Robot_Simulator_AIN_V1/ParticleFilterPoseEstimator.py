@@ -23,8 +23,6 @@ class ParticleFilterPoseEstimator():
             self._particles[i, 1] = np.random.uniform(poseFrom[1], poseTo[1])
             self._particles[i, 2] = np.random.uniform(poseFrom[2], poseTo[2])
             self._particles[i, 3] = 1 # weighting for all particles
-        self._particles[199] = [4,4,m.pi,1]
-
 
     def integrateMovement(self, steeringAction):
         # add random noise to the steering action
@@ -44,11 +42,9 @@ class ParticleFilterPoseEstimator():
 
     def integrateMeasurement(self, dist_list, alpha_list, distantMap):
         #calculate likelihoodfield, chap. 5 slide 75
-        sigma = 0.5 #self._robot  ._sensorNoise
+        sigma = 0.6 #self._robot  ._sensorNoise
 
         for i in range(0, self._particles.shape[0]):
-            if i is 199:
-                print("b")
             p = 1
             for j in range(0, len(dist_list)):
                 # only calculate dist to next obstacle if a distance was actually measured by the laser
@@ -62,10 +58,11 @@ class ParticleFilterPoseEstimator():
                     global_coords.append(self._particles[i][1] + np.sin(real_angle) * dist_list[j])
                     # Plot spots#
                     global_coords.append(0)
+
                     #l = []
                     #l.append(global_coords)
-
                     #plotPoseParticles(l)
+
                     # if the global coordinates for the measured distance at the position of a particle lies out of the map-bounds, the particle gets a minimal weight
                     if int(global_coords[0]/distantMap.cellSize) > distantMap.xSize or int(global_coords[0]/distantMap.cellSize) < 0 \
                             or int(global_coords[1]/distantMap.cellSize) > distantMap.ySize or int(global_coords[1]/distantMap.cellSize) < 0:
@@ -85,7 +82,7 @@ class ParticleFilterPoseEstimator():
             self._particles[i][3] = p
 
         # resampling, "Roulette-Rad"
-        new_particles = np.empty((200,4))
+        new_particles = np.empty((self._particles.shape[0],4))
         intervals = [0]
         for i in range(0, self._particles.shape[0]):
             intervals.append(intervals[i] + self._particles[i][3])
@@ -94,6 +91,7 @@ class ParticleFilterPoseEstimator():
             z = random.uniform(0, intervals[len(intervals)-1])
             idx_found = intervals.index(self.find_lt(intervals, z))
             new_particles[i][0:4] = self._particles[idx_found]
+
         self._particles = new_particles
 
     def gaussian(self, mu, sigma, x):
@@ -113,9 +111,11 @@ class ParticleFilterPoseEstimator():
             return i
         raise ValueError
 
+
     def getPose(self):
         return self._particles.mean(axis=0)
 
 
     def getCovariance(self):
-        return np.cov(self._particles, axis=0)
+        # calc cov only up to the first 3 cols, last col is weight
+        return np.cov(self._particles[:,:3].T) # np.cov takes variables as rows, observations as cols --> transposition neccessary
