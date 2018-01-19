@@ -23,7 +23,7 @@ class ParticleFilterPoseEstimator():
             self._particles[i, 1] = np.random.uniform(poseFrom[1], poseTo[1])
             self._particles[i, 2] = np.random.uniform(poseFrom[2], poseTo[2])
             self._particles[i, 3] = 1 # weighting for all particles
-        self._particles[199] = [4,4,m.pi/2,1]
+        self._particles[199] = [4,4,m.pi,1]
 
 
     def integrateMovement(self, steeringAction):
@@ -44,7 +44,7 @@ class ParticleFilterPoseEstimator():
 
     def integrateMeasurement(self, dist_list, alpha_list, distantMap):
         #calculate likelihoodfield, chap. 5 slide 75
-        sigma = 0.4 #self._robot  ._sensorNoise
+        sigma = 0.5 #self._robot  ._sensorNoise
 
         for i in range(0, self._particles.shape[0]):
             if i is 199:
@@ -112,3 +112,10 @@ class ParticleFilterPoseEstimator():
         if i != len(list) and list[i] == x:
             return i
         raise ValueError
+
+    def getPose(self):
+        return self._particles.mean(axis=0)
+
+
+    def getCovariance(self):
+        return np.cov(self._particles, axis=0)

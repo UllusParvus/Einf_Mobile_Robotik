@@ -13,8 +13,8 @@ def main():
     #print("distance grid generated")
     #dist_grid.drawGrid()
 
-    fromPose = [robotStartPose[0]-2, robotStartPose[1]-2, robotStartPose[2] - m.pi/4]
-    toPose = [robotStartPose[0]+2, robotStartPose[1]+2, robotStartPose[2] + m.pi/4]
+    fromPose = [robotStartPose[0]-1, robotStartPose[1]-1, robotStartPose[2] - m.pi/8]
+    toPose = [robotStartPose[0]+1, robotStartPose[1]+1, robotStartPose[2] + m.pi/8]
     estimator = ParticleFilterPoseEstimator()
     estimator.setRobot(myRobot)
     estimator.initialize(fromPose, toPose, n=200)
@@ -33,8 +33,17 @@ def main():
             plotPoseParticles(estimator._particles)
             plotShow()
             estimator.integrateMeasurement(myRobot.sense(), myRobot.getSensorDirections(), dist_grid)
+
+            mean = estimator.getPose()
+            print("mean x: ", mean[0])
+            print("mean y: ", mean[1])
+            print("mean theta: ", np.rad2deg(mean[2]))
+            cov = estimator.getCovariance()
+            #print("cov x: ", cov[0])
+            print(cov)
             plotPoseParticles(estimator._particles)
             plotShow()
+
         # Only every 5 times
 
         counter += 1
