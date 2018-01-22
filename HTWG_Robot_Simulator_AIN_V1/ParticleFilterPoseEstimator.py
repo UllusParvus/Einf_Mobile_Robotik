@@ -42,7 +42,7 @@ class ParticleFilterPoseEstimator():
 
     def integrateMeasurement(self, dist_list, alpha_list, distantMap):
         #calculate likelihoodfield, chap. 5 slide 75
-        sigma = 0.6 #self._robot  ._sensorNoise
+        sigma = 0.5 #self._robot  ._sensorNoise
 
         for i in range(0, self._particles.shape[0]):
             p = 1
@@ -63,21 +63,15 @@ class ParticleFilterPoseEstimator():
                     #l.append(global_coords)
                     #plotPoseParticles(l)
 
-                    # if the global coordinates for the measured distance at the position of a particle lies out of the map-bounds, the particle gets a minimal weight
-                    if int(global_coords[0]/distantMap.cellSize) > distantMap.xSize or int(global_coords[0]/distantMap.cellSize) < 0 \
-                            or int(global_coords[1]/distantMap.cellSize) > distantMap.ySize or int(global_coords[1]/distantMap.cellSize) < 0:
-                        p = p * 0.001
-                    else:
-                        # Get distance to next obstacle
-                        y = int(global_coords[0]/distantMap.cellSize)
-                        x = int(global_coords[1]/distantMap.cellSize)
-                        dist = distantMap.grid[y][x]
-                        # Weight the probability with the self created factor f according to a gaussian function we created.
-                        # This function represents what distance to the next obstacle we still assume as good.
+                    dist = distantMap.getValue(global_coords[0], global_coords[1])
+
+                    if dist is not None:
                         gaussian_value = self.gaussian(0.0, sigma, dist)
                         # Normalize gaussian to [0,1]
                         gaussian_value = (gaussian_value - 0) / (self.gaussian(0.0, sigma, 0.0) - 0)
                         p = p * gaussian_value
+                    else:
+                        p = p * 1e-30
 
             self._particles[i][3] = p
 

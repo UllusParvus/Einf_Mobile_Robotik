@@ -106,6 +106,9 @@ class World:
         # Drawn (several!) polylines:
         self._drawnPolylines = []
 
+        # Drawn (several!) points:
+        self._drawnPoints = []
+
     # --------
     # Draw a polyline.
     #
@@ -186,6 +189,36 @@ class World:
         box = Circle(Point(x,y),self._boxRadius)
         box.draw(self._win)
         self._boxes.append(box)
+
+    def drawPoints(self, points, color='red'):
+        for p in points:
+            self.drawPoint(p, color)
+
+    def drawPoint(self, point, color='red'):
+        c = Circle(Point(point[0], point[1]), 0.05)
+        c.draw(self._win)
+        c.setFill(color)
+        c.setOutline(color)
+        c.setWidth(0.05)
+        self.drawArrow(point, color)
+        self._drawnPoints.append(c)
+
+    def drawArrow(self, point, color='blue'):
+        x = point[0] + np.cos(point[2]) * 0.25
+        y = point[1] + np.sin(point[2]) * 0.25
+        l = Line(Point(point[0], point[1]), Point(x, y))
+        l.draw(self._win)
+        l.setFill(color)
+        l.setWidth(0.05)
+        self._drawnPoints.append(l)
+
+    def undrawPoints(self):
+        if self._drawnPoints == []:
+            return
+        for point in self._drawnPoints:
+            point.undraw()
+        self._drawnPoints = []
+
 
     # --------
     # Define a new room with name n and center position (x,y).
